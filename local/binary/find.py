@@ -1,4 +1,6 @@
-import mmap, sys, os
+import mmap
+import os
+import sys
 
 
 def FindStringInByteFile(word, file):

@@ -2,7 +2,7 @@ import sys
 
 
 def FindStringInByteFile(word, file):
-    findword = bytes(word, 'utf-8')
+    findword = word.encode("utf-8")
     with open(file, "r+b") as f:
         for line in f:
             if findword in line:
