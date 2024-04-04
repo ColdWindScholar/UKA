@@ -13,11 +13,14 @@ import update_metadata_pb2 as um
 
 flatten = lambda l: [item for sublist in l for item in sublist]
 
+
 def u32(x):
     return struct.unpack('>I', x)[0]
 
+
 def u64(x):
     return struct.unpack('>Q', x)[0]
+
 
 def verify_contiguous(exts):
     blocks = 0
@@ -30,6 +33,7 @@ def verify_contiguous(exts):
 
     return True
 
+
 def data_for_op(op):
     p.seek(data_offset + op.data_offset)
     data = p.read(op.data_length)
@@ -38,12 +42,13 @@ def data_for_op(op):
 
     if op.type == op.REPLACE_XZ:
         dec = lzma.LZMADecompressor()
-        data = dec.decompress(data) 
+        data = dec.decompress(data)
     elif op.type == op.REPLACE_BZ:
         dec = bz2.BZ2Decompressor()
-        data = dec.decompress(data) 
+        data = dec.decompress(data)
 
     return data
+
 
 def dump_part(part):
     print(part.partition_name)
@@ -57,6 +62,7 @@ def dump_part(part):
         out_file.write(data)
 
     assert h.digest() == part.new_partition_info.hash, 'partition hash mismatch'
+
 
 p = open(sys.argv[1], 'rb')
 
@@ -84,7 +90,7 @@ dam.ParseFromString(manifest)
 for part in dam.partitions:
     for op in part.operations:
         assert op.type in (op.REPLACE, op.REPLACE_BZ, op.REPLACE_XZ), \
-                'unsupported op'
+            'unsupported op'
 
     extents = flatten([op.dst_extents for op in part.operations])
     assert verify_contiguous(extents), 'operations do not span full image'
