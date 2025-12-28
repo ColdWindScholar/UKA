@@ -1,1 +1,0 @@
-/data/local/python31/usr/include/curses.h
