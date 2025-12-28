@@ -1,0 +1,116 @@
+#!/system/bin/python31
+
+import re
+import sys
+
+# Структуры данных
+class BoardID:
+    def __init__(self, ids):
+        self.ids = [id_.strip() for id_ in ids]  # Динамический список значений board_id
+
+    def has_nonzero_value(self):
+        """Проверяем, есть ли хотя бы одно значение больше 0."""
+        return any(bid != "0x00000000" for bid in self.ids)
+
+    def __str__(self):
+        # Генерация строки вида: --board_id0 VALUE --board_id1 VALUE ...
+        return ' '.join([f"--board_id{i} {bid}" for i, bid in enumerate(self.ids)])
+
+
+class VendorRamdisk:
+    def __init__(self, ramdisk_type, name, board_id, index):
+        self.ramdisk_type = ramdisk_type  # Тип рамдиска (например, 0x1, 0x2)
+        self.name = name  # Имя рамдиска (например, recovery)
+        self.board_id = BoardID(board_id)  # Объект BoardID
+        self.index = index  # Индекс рамдиска для формирования имени переменных
+
+    def __str__(self):
+        # Формируем строки для вывода
+        index_str = f"{self.index:02}"  # Индекс с ведущими нулями
+        ramdisk_type_str = f'ramdisk_type{index_str} = {self.ramdisk_type}'
+        ramdisk_name_str = f'ramdisk_name{index_str} = {self.name if self.name else " "}'
+        # Выводим board_id только если есть ненулевые значения
+        ramdisk_board_str = (
+            f'ramdisk_board{index_str} = {self.board_id}'
+            if self.board_id.has_nonzero_value()
+            else ""
+        )
+        # Формируем итоговый вывод
+        return "\n".join(filter(None, [ramdisk_type_str, ramdisk_name_str, ramdisk_board_str]))
+
+
+class VendorBootImage:
+    def __init__(self, ramdisk_table_size):
+        self.ramdisk_table_size = ramdisk_table_size
+        self.ramdisks = []  # Список VendorRamdisk
+
+    def add_ramdisk(self, ramdisk):
+        self.ramdisks.append(ramdisk)
+
+    def __str__(self):
+        if self.ramdisk_table_size == 0:
+            return "vendor ramdisk table size = 0"
+        return '\n\n'.join([str(ramdisk) for ramdisk in self.ramdisks])
+
+
+# Парсер данных
+def parse_vendor_boot_to_structure(file_content):
+    # Проверяем размер таблицы
+    table_size_match = re.search(r'vendor ramdisk table size:\s*(\d+)', file_content)
+    table_size = int(table_size_match.group(1)) if table_size_match else 0
+
+    # Создаем объект VendorBootImage
+    vendor_boot = VendorBootImage(ramdisk_table_size=table_size)
+
+    # Если таблица пуста, сразу возвращаем объект
+    if table_size == 0:
+        return vendor_boot
+
+    # Регулярное выражение для поиска блока рамдиска
+    ramdisk_pattern = re.compile(r'vendor_ramdisk\d{2}:\s*{(.*?)}', re.DOTALL)
+
+    # Найти все рамдиски
+    ramdisks = ramdisk_pattern.findall(file_content)
+
+    for index, ramdisk in enumerate(ramdisks):
+        # Найти тип
+        ramdisk_type_match = re.search(r'type:\s*0x([0-9a-fA-F]+)', ramdisk)
+        ramdisk_type = f"0x{ramdisk_type_match.group(1)}" if ramdisk_type_match else "0x0"
+
+        # Найти имя
+        ramdisk_name_match = re.search(r'name:\s(.*)?', ramdisk)
+        ramdisk_name = ramdisk_name_match.group(1).strip() if ramdisk_name_match else ""
+
+        # Найти board_id
+        board_id_match = re.search(r'board_id:\s*\[\s*(.*?)\s*\]', ramdisk, re.DOTALL)
+        board_ids = []
+        if board_id_match:
+            board_ids = [id_.strip() for id_ in board_id_match.group(1).split(',') if id_]
+
+        # Создать объект VendorRamdisk и добавить его в VendorBootImage
+        ramdisk_obj = VendorRamdisk(ramdisk_type, ramdisk_name, board_ids, index)
+        vendor_boot.add_ramdisk(ramdisk_obj)
+
+    return vendor_boot
+
+
+# Основной код
+if __name__ == "__main__":
+    # Проверяем, передан ли входной файл
+    if len(sys.argv) != 2:
+        print("Usage: python script.py <config_file>")
+        sys.exit(1)
+
+    input_file = sys.argv[1]  # Входной файл из аргументов командной строки
+
+    try:
+        with open(input_file, 'r') as file:
+            file_content = file.read()
+
+        vendor_boot = parse_vendor_boot_to_structure(file_content)
+        print(vendor_boot)
+
+    except FileNotFoundError:
+        print(f"File {input_file} not found!")
+    except Exception as e:
+        print(f"Error: {e}")

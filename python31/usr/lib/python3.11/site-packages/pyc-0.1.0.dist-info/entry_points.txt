@@ -1,0 +1,4 @@
+[console_scripts]
+pyc=pyc.cli:compile
+python-pyc=pyc.cli:compile_and_run
+

@@ -1,0 +1,2 @@
+[console_scripts]
+pysquashfs = PySquashfsImage.__main__:main

@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: pyc
+Version: 0.1.0
+Summary: Compile Python code to binary
+License: MIT
+Author: Jukka Aho
+Author-email: ahojukka5@gmail.com
+Requires-Python: >=3.8,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Dist: Cython (>=0.29.21,<0.30.0)

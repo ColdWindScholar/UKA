@@ -1,0 +1,258 @@
+Metadata-Version: 2.1
+Name: PySquashfsImage
+Version: 0.9.0
+Summary: Squashfs image parser
+Home-page: https://github.com/matteomattei/PySquashfsImage
+Author: Matteo Mattei; Nicola Ponzeveroni;
+Author-email: info@matteomattei.com
+Keywords: filesystem,parser,squash,squashfs
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Other Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.1
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Filesystems
+Classifier: Topic :: Utilities
+Requires-Python: >=2.7, !=3.0.*
+Description-Content-Type: text/markdown
+License-File: LICENSE.GPL3
+License-File: LICENSE.LGPL
+Requires-Dist: enum34 ; python_version < "3.4"
+Requires-Dist: python-dateutil ; python_version < "3.6"
+Requires-Dist: argparse ; python_version == "3.1"
+
+PySquashfsImage is a lightweight library and tool for reading and extracting
+squashfs 4.0 little endian images in Python. It provides a high-level API for
+easy access to these file systems. It is compatible with Python 2.7 and Python 3.1+.
+
+## Installation
+
+```
+pip install PySquashfsImage
+```
+
+### Compression
+
+Supported compression methods:
+
+- Gzip
+- [LZ4](https://pypi.org/project/lz4/) (requires Python 3.7+)
+- [LZO](https://pypi.org/project/python-lzo/) (requires Python 2.7 or 3.5+, also see [here](https://test.pypi.org/project/python-lzo/))
+- [XZ](https://pypi.org/project/backports.lzma/) (included in Python 3.3+)
+- [Zstandard](https://pypi.org/project/zstandard/) (requires Python 3.7+)
+
+Some of them require a third-party library that you'll need to install
+separately if needed.
+
+## Use as a library
+
+### List all elements in the image:
+
+```python
+from PySquashfsImage import SquashFsImage
+
+image = SquashFsImage.from_file('/path/to/my/image.img')
+for item in image:
+    print(item.name)
+image.close()
+```
+
+### Print all entries with their absolute path:
+
+```python
+from PySquashfsImage import SquashFsImage
+
+# Use with a context manager (recommended).
+with SquashFsImage.from_file('/path/to/my/image.img') as image:
+    for file in image:
+        print(file.path)
+```
+
+### Print all entries that aren't directories:
+
+```python
+from PySquashfsImage import SquashFsImage
+
+with open('/path/to/my/image.img', "rb") as f:
+    imgbytes = f.read()
+
+# Create an image from bytes.
+with SquashFsImage.from_bytes(imgbytes) as image:
+    for item in image:
+        if not item.is_dir:
+            print(item.path)
+```
+
+### Save the content of a file:
+
+```python
+from PySquashfsImage import SquashFsImage
+from PySquashfsImage.extract import extract_file
+
+with SquashFsImage.from_file('/path/to/my/image.img') as image:
+    myfile = image.find('myfilename')
+    if myfile is not None:
+        with open('/tmp/' + myfile.name, 'wb') as f:
+            print('Saving original ' + myfile.path + ' in /tmp/' + myfile.name)
+            f.write(myfile.read_bytes())
+
+    # If the file is large it's preferable to iterate over its content.
+    hugefile = image.select("/hugedir/myhugefile.big")
+    with open("myhugefile.big", "wb") as f:
+        for block in hugefile.iter_bytes():
+            f.write(block)
+
+    # Or use extract_file(), which preserves the file's metadata (except extended attributes).
+    extract_file(myfile, "myextractedfile")
+```
+
+### Save the content of a directory:
+
+```python
+from PySquashfsImage import SquashFsImage
+from PySquashfsImage.extract import extract_dir
+
+with SquashFsImage.from_file('/path/to/my/image.img') as image:
+    mydir = image.select("/mydir")
+    if mydir is not None:
+        # Metadata is handled the same way as with extract_file().
+        extract_dir(mydir, "/tmp/mydir")
+```
+
+## Use as a command
+
+### List
+
+```
+$ pysquashfs list -h
+usage: pysquashfs list [-h] [-o OFFSET] [--utc] [--showtz] [-p PATH] [-r] [-t TYPE [TYPE ...]] file
+
+List the contents of the file system
+
+positional arguments:
+  file                        squashfs filesystem
+
+optional arguments:
+  -h, --help                  show this help message and exit
+  -o OFFSET, --offset OFFSET  absolute position of file system's start. Default: 0
+  --utc                       use UTC rather than local time zone when displaying time. Default: False
+  --showtz                    show UTC offset when displaying time. Default: False
+  -p PATH, --path PATH        absolute path of directory or file to list. Default: '/'
+  -r, --recursive             whether to list recursively. For the root directory the value is inverted. Default: False
+  -t TYPE [TYPE ...], --type TYPE [TYPE ...]
+                              when listing a directory, filter by file type with f, d, l, p, s, b, c
+```
+
+Similar to `unsquashfs -ll -full`.
+
+Example that only lists directories under the root directory:
+```
+$ pysquashfs list myimage.img -r -t d
+drwxrwxrwx 1049/1049               468 2018-10-10 08:14:16 /bin
+drwxrwxrwx 1049/1049                 3 2021-05-14 18:46:17 /dev
+drwxrwxrwx 1049/1049               869 2019-11-12 09:31:30 /etc
+drwxrwxrwx 1049/1049                 3 2021-05-14 18:46:17 /home
+drwxrwxrwx 1049/1049               406 2017-12-11 08:14:16 /lib
+drwxrwxrwx 1049/1049                98 2021-05-14 18:46:17 /mnt
+drwxrwxrwx 1049/1049                 3 2021-05-14 15:12:17 /proc
+drwxrwxrwx 1049/1049                 3 2021-05-14 15:12:17 /root
+drwxrwxrwx 1049/1049               690 2021-05-14 12:11:44 /sbin
+drwxrwxrwx 1049/1049                 3 2021-05-14 15:12:17 /sys
+drwxrwxrwx 1049/1049                 3 2021-05-14 18:46:17 /tmp
+drwxrwxrwx 1049/1049               364 2021-05-14 18:46:17 /usr
+drwxrwxrwx 1049/1049                60 2018-11-09 05:38:43 /var
+13 file(s) found
+```
+
+### Extract
+
+```
+$ pysquashfs extract -h
+usage: pysquashfs extract [-h] [-o OFFSET] [-d DEST] [-p PATH] [-f] [-q] file
+
+Extract files from the file system
+
+positional arguments:
+  file                        squashfs filesystem
+
+optional arguments:
+  -h, --help                  show this help message and exit
+  -o OFFSET, --offset OFFSET  absolute position of file system's start. Default: 0
+  -d DEST, --dest DEST        directory that will contain the extracted file(s). If it doesn't exist it will be created. Default: current directory
+  -p PATH, --path PATH        absolute path of directory or file to extract. Default: '/'
+  -f, --force                 overwrite files that already exist. Default: False
+  -q, --quiet                 don't print extraction status. Default: False
+```
+
+On Unix, this command tries to give the same output as `unsquashfs`, but should
+not be preferred over it. Some features like extended attributes are missing.
+
+On Windows, you might create symlinks with a privileged account or with an
+unprivileged one if Developer Mode is enabled.
+Otherwise, a regular file containing the target will be created.
+Special files are ignored.
+
+Example command that will extract `/bin` under `/tmp`:
+```
+$ pysquashfs extract myimage.img -p /bin -d /tmp
+```
+
+### Scan
+
+```
+$ pysquashfs scan -h
+usage: pysquashfs scan [-h] [--utc] [--showtz] file
+
+Find and show all the superblocks that can be found in a file
+
+positional arguments:
+  file        squashfs filesystem
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --utc       use UTC rather than local time zone when displaying time. Default: False
+  --showtz    show UTC offset when displaying time. Default: False
+```
+
+Output is similar to `unsquashfs -s [-UTC]`.
+
+Example:
+```
+$ pysquashfs scan myimage.img
+Superblock #1
+Magic:                        0x73717368
+Major:                        4
+Minor:                        0
+Creation or last append time: 2018-06-16 16:46:23
+Size:                         7864320
+Compression:                  XZ
+Block size:                   524288
+Flags:                        192
+Number of fragments:          27
+Number of inodes:             361
+Number of ids:                1
+Inode table start:            0x77E924
+Directory table start:        0x77FAF2
+Fragment table start:         0x781448
+Lookup table start:           0x7817C6
+ID table start:               0x7817D4
+xattr ID table start:         0xFFFFFFFFFFFFFFFF
+Offset:                       161843
+```

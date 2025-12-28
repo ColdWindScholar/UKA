@@ -1,0 +1,97 @@
+#!/system/bin/sh
+
+err(){
+ echo ""
+ echo "Usage: ubifs_unpack <filepath>"
+ echo ""
+}
+
+if [ "$1" = "" ]; then
+err
+exit
+fi
+
+file="$1"
+
+
+if [ -f "$file" ]; then
+ pack_exten="${file##*.}"
+ r_ubi="$(busybox basename $file)"
+ ubi_name=${r_ubi%.*}
+ [ "$(busybox which ubireader_extract_files)" ] && file_extra=ubireader_extract_files || file_extra=/data/data/com.termux/files/usr/bin/ubireader_extract_files
+ [ "$(busybox which ubireader_utils_info)" ] && file_info=ubireader_utils_info || file_info=/data/data/com.termux/files/usr/bin/ubireader_utils_info
+ if [ ! -z "$file_extra" -a ! -z "$file_info" -a ! -z "$(busybox hexdump -C -n 2000 "$file" | busybox grep -o "55 42 49 23")" ]; then
+ 
+ echo
+ echo -e "\033[33;1m.....$file имеет файловую систему ubifs!\033[0m"
+ echo
+ echo ".....Распаковка $file..."
+ echo
+ 
+ busybox mkdir -p /data/local/UnpackerSystem 2> /dev/null
+ cd /data/local/UnpackerSystem
+ busybox rm -rf ubifs-root
+
+if [ "$(busybox hexdump -C -n 20 "$file" | busybox grep -o "3a ff 26 ed")" ]; then
+ simg2img "$file" ubi_raw.img
+ file="ubi_raw.img"
+fi
+
+"$file_extra" -k "$file" > ubi.log && "$file_info" "$file" >> ubi.log
+busybox mv ubi.log ubifs-root/ubi.log
+
+print_extra="$(busybox cat ubifs-root/ubi.log | busybox grep "Extracting files to:")"
+print_info="$(busybox cat ubifs-root/ubi.log | busybox grep -o "Writing to:")"
+if [ ! -z "$print_extra" -a ! -z "$print_info" ]; then
+
+echo "$print_extra" | busybox awk '{ print "....."$1" "$2" "$3" ""/data/local/UnpackerSystem/"$4}'
+
+#volum="$(busybox cat ubifs-root/ubi.log | busybox awk '/Volume/ { print $2 }')"
+busybox cat ubifs-root/ubi.log | busybox awk '/Writing to:/ { print $3 }' | while read rr; do
+busybox cp -f "$rr" ubifs-root
+u="$(busybox basename $rr)"
+u_name=${u##*/}
+
+if [ ! -z "$(echo ubifs-root/"$u_name" | busybox grep ".ini$" )" ]; then
+busybox sed -i '/vol_flags = 0/d' ubifs-root/"$u_name"
+elif [ ! -z "$(echo ubifs-root/"$u_name" | busybox grep ".sh$" )" ]; then
+
+[ "$(busybox which mkfs.ubifs)" ] && file_pack=mkfs.ubifs || file_pack=/data/data/com.termux/files/usr/bin/mkfs.ubifs
+
+[ "$(busybox which ubinize)" ] && file_res=ubinize || file_res=/data/data/com.termux/files/usr/bin/ubinize
+
+busybox sed -i "s!^/usr/sbin/mkfs.ubifs!$file_pack!" ubifs-root/"$u_name"
+busybox sed -i "s!^/usr/sbin/ubinize!$file_res!" ubifs-root/"$u_name"
+name_ubi="$(busybox cat ubifs-root/ubi.log | busybox awk '/Extracting files to:/ { print $4 }' | busybox sed 's!ubifs-root/!!')"
+name_real_img="$(busybox cat ubifs-root/"$u_name" | busybox awk '/ubinize/ {if($15 ~ ".ubi") print $15}')"
+name_out_img="../${ubi_name}.new.${pack_exten}"
+echo "${ubi_name}" > ubifs-root/ubi_name.txt 
+echo "${pack_exten}" > ubifs-root/part_exten.txt 
+busybox sed -i -e "s!\\\$1!$name_ubi!" ubifs-root/"$u_name"
+busybox sed -i -e "s!$name_real_img!$name_out_img!" ubifs-root/"$u_name"
+busybox sed -i -e "s|#!/bin/sh|#!/system/bin/sh|" ubifs-root/"$u_name"
+busybox sed -i -e "2 s!^! cd /data/local/UnpackerSystem/ubifs-root\n!" ubifs-root/"$u_name"
+else
+echo
+echo ".....Файл конфигурации не отредактирован!"
+echo
+fi
+done
+echo
+echo -e "\033[33;1m.....Успешно распаковано! \033[0m"
+echo
+else
+echo
+echo ".....Error, ошибка распаковки!"
+echo
+fi
+else
+echo
+echo ".....Ошибка, в системе нет бинарных файлов, или образ не имеет файловой системы: ubifs!"
+echo
+fi
+else
+echo
+echo ".....Нет файла, для распаковки!"
+echo
+fi

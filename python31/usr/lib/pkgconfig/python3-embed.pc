@@ -1,0 +1,1 @@
+/data/local/python31/usr/lib/pkgconfig/python-3.11-embed.pc

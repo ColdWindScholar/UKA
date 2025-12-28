@@ -1,0 +1,21 @@
+#!/system/bin/sh
+
+PYDROID_DIR="/data/local/python31"
+
+export HOME="$PYDROID_DIR"
+
+export PATH="${PYDROID_DIR}/usr/bin:/data/data/com.alif.ide.cpp/files/alif/bin:${PATH}"
+
+export LD_LIBRARY_PATH="${PYDROID_DIR}/usr/lib:${LD_LIBRARY_PATH}"
+
+[ ! "${TMPDIR}" ] &&
+  export TMPDIR="/data/local/tmp"
+
+/data/local/python31/usr/bin/python3.11 "$@"
+
+
+
+
+
+
+ 
