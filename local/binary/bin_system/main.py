@@ -15,9 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
-import mmap
 import os
-import platform
 import struct
 import subprocess
 import sys

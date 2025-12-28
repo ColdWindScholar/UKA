@@ -1,8 +1,10 @@
 from __future__ import print_function, division
-from sys import stderr
+
 from enum import IntEnum
-from struct import pack, unpack, calcsize
 from os import SEEK_CUR, SEEK_END, SEEK_SET
+from struct import pack, calcsize
+from sys import stderr
+
 
 #from __init__ import SparseChunkType
 class SparseChunkType(IntEnum):
@@ -54,7 +56,7 @@ class SimgWriter(object):
         return self.outf.tell()
 
     def flush(self):
-        self._close_chunk();
+        self._close_chunk()
 
     def _print_state(self, pfx, debug):
         if self.debug >= debug:

@@ -1,6 +1,5 @@
 import sys
 import argparse
-import shutil
 from pathlib import Path
 from struct import unpack, calcsize
 from typing import Union, List, Generator
