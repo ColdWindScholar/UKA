@@ -1,0 +1,53 @@
+name: "Build Tool"
+permissions:
+  contents: write
+  discussions: write
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    needs: [build-linux]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+      - name: Rename Tool
+        run: |
+          mv UKA/UKA.zip UKA-PRO-5.${{ github.run_number }}-magisk.zip
+      - name: Upload release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          removeArtifacts: true
+          name: "UKA-PRO-5.${{ github.run_number }}"
+          tag: "CI_BUILD_${{ github.run_number }}"
+          body: |
+            Build times: ${{ github.run_number }}
+          artifacts: "*.zip"
+
+  build-linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Tool
+        run: |
+          chmod -R 777 ./
+          tar caf bin64.tar.xz bin
+          tar caf binary64.tar.xz local
+          tar caf python31_64.tar.xz python31
+          tar caf aik64.tar.xz AIK-mobile
+          cd ..
+          rm -rf python
+          rm -rf bin
+          rm -rf local
+          rm -rf AIK-mobile
+          rm -rf .github
+          rm -rf .git
+          zip -r -x=*.zip UKA.zip .
+      - name: Upload Build
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: UKA
+          path: './UKA.zip'
