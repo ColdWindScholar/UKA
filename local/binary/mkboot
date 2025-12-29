@@ -618,7 +618,7 @@ def write_data(args, pagesize):
     write_padded_file(args.output, args.ramdisk, pagesize)
     write_padded_file(args.output, args.second, pagesize)
 
-    if args.header_version > 0 and args.header_version < 3:
+    if 0 < args.header_version < 3:
         write_padded_file(args.output, args.recovery_dtbo, pagesize)
     if args.header_version == 2:
         write_padded_file(args.output, args.dtb, pagesize)
