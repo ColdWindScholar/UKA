@@ -300,9 +300,9 @@ def egcd(a, b):
     divisor of |a| and |b| and |a|*|x| + |b|*|y| = |gcd|.
   """
   if a == 0:
-    return (b, 0, 1)
+    return b, 0, 1
   g, y, x = egcd(b % a, a)
-  return (g, x - (b // a) * y, y)
+  return g, x - (b // a) * y, y
 
 
 def modinv(a, m):
@@ -1177,7 +1177,7 @@ class AvbDescriptor(object):
   """
 
   SIZE = 16
-  FORMAT_STRING = ('!QQ')  # tag, num_bytes_following (descriptor header)
+  FORMAT_STRING = '!QQ'  # tag, num_bytes_following (descriptor header)
 
   def __init__(self, data):
     """Initializes a new property descriptor.
@@ -4729,7 +4729,7 @@ class AvbTool(object):
                             type=argparse.FileType('rb'),
                             required=True)
     sub_parser.add_argument('--product_id',
-                            help=('Path to Product ID file'),
+                            help='Path to Product ID file',
                             type=argparse.FileType('rb'),
                             required=True)
     sub_parser.set_defaults(func=self.make_cert_permanent_attributes)
