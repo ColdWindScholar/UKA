@@ -34,15 +34,14 @@ def main(file, whatfind, savefolder):
         with open(file, 'rb') as f:
             f.seek(offset)
             readbyte = f.read(nwritebyte)
-        fileavb = savefolder + os.sep + avb + "_avb.img"
-        with open(fileavb, 'wb') as favb:
+        with open(f"{savefolder}/{avb}_avb.img", 'wb') as favb:
             favb.write(readbyte)
     else:
         return
 
 
 if __name__ == '__main__':
-    if sys.argv.__len__() == 3:
+    if len(sys.argv) == 3:
         main(sys.argv[1], sys.argv[2], os.path.dirname(os.path.abspath(sys.argv[2])))
-    if sys.argv.__len__() == 4:
+    if len(sys.argv) == 4:
         main(sys.argv[1], sys.argv[2], sys.argv[3])
