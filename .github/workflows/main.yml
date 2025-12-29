@@ -37,7 +37,7 @@ jobs:
           tar caf binary64.tar.xz local
           tar caf python31_64.tar.xz python31
           tar caf aik64.tar.xz AIK-mobile
-          rm -rf python
+          rm -rf python31
           rm -rf bin
           rm -rf local
           rm -rf AIK-mobile
