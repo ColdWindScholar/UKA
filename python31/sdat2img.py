@@ -12,15 +12,8 @@ import sys, os, errno
 def main(TRANSFER_LIST_FILE, NEW_DATA_FILE, OUTPUT_IMAGE_FILE):
     __version__ = '1.2'
 
-    if sys.hexversion < 0x02070000:
-        print >> sys.stderr, "Python 2.7 or newer is required."
-        try:
-            input = raw_input
-        except NameError: pass
-        input('Press ENTER to exit...')
-        sys.exit(1)
-    else:
-        print('sdat2img binary - version: {}\n'.format(__version__))
+
+    print('sdat2img binary - version: {}\n'.format(__version__))
 
     def rangeset(src):
         src_set = src.split(',')
@@ -105,14 +98,14 @@ def main(TRANSFER_LIST_FILE, NEW_DATA_FILE, OUTPUT_IMAGE_FILE):
                 output_img.seek(begin*BLOCK_SIZE)
                 
                 # Copy one block at a time
-                while(block_count > 0):
+                while block_count > 0:
                     output_img.write(new_data_file.read(BLOCK_SIZE))
                     block_count -= 1
         else:
             print('Skipping command {}...'.format(command[0]))
 
     # Make file larger if necessary
-    if(output_img.tell() < max_file_size):
+    if output_img.tell() < max_file_size:
         output_img.truncate(max_file_size)
 
     output_img.close()
@@ -129,9 +122,6 @@ if __name__ == '__main__':
         print('    <system_new_file>: system new dat file')
         print('    [system_img]: output system image\n\n')
         print('Visit xda thread for more information.\n')
-        try:
-            input = raw_input
-        except NameError: pass
         input('Press ENTER to exit...')
         sys.exit()
 
