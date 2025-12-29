@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
       - name: Rename Tool
         run: |
           mv UKA/UKA.zip UKA_5.${{ github.run_number }}_64_magisk.zip
@@ -46,7 +46,7 @@ jobs:
           zip -r -x=*.zip UKA.zip .
       - name: Upload Build
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: UKA
           path: './UKA.zip'

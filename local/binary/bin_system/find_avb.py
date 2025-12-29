@@ -27,10 +27,8 @@ def main(file, whatfind, savefolder):
         avbtxt = os.path.basename(os.path.abspath(file))
         #avb=re.sub('[[|.|+|(|-|_]',' ', avbtxt).split(' ')[0]
         avb = re.split('\[|\.|\+|\(|-|_| ', avbtxt, maxsplit=1)[0]
-        fileavbtxt = savefolder + os.sep + avb + "_size_avb.txt"
-        ftxt = open(fileavbtxt, 'tw')
-        print(offset, file=ftxt)
-        ftxt.close()
+        with open(f"{savefolder}/{avb}_size_avb.txt", 'tw') as ftxt:
+            print(offset, file=ftxt)
         size = os.stat(file).st_size
         nwritebyte = size - offset
         with open(file, 'rb') as f:
