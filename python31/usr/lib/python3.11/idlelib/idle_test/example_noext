@@ -1,4 +1,0 @@
-#!/data/data/com.alif.ide.cpp/files/alif/bin/env python
-
-def example_function(some_argument):
-    pass
