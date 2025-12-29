@@ -1,4 +1,6 @@
-import sys, os, re, mmap
+import mmap
+import os
+import sys
 
 
 def reversefinder(file, whatfind):
@@ -24,5 +26,5 @@ def reversefinder(file, whatfind):
 
 
 if __name__ == '__main__':
-    if sys.argv.__len__() == 3:
+    if len(sys.argv) == 3:
         print(reversefinder(sys.argv[1], sys.argv[2]))
