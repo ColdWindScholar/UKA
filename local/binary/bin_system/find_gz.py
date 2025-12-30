@@ -1,41 +1,21 @@
 import sys, os
 
 
-def finder(file, whatfind):
-    whatfind = bytes.fromhex(whatfind)
-    size = os.stat(file).st_size
-    read_dump = size
+def finder(file: str, whatfind: str):
     with open(file, "rb") as f:
-        f.seek(size - read_dump)
-        mm = f.read(read_dump)
-        offfset = mm.find(whatfind)
-        if offfset >= 0:
-            offfset = (size - read_dump) + offfset
-            #print(".....finding  header .gz in %s"%(hex(offfset)))
-    return offfset
+        return f.read().find(bytes.fromhex(whatfind))
 
 
-def main(file, whatfind, savefolder):
+def main(file, whatfind):
     offset = finder(file, whatfind)
     if offset >= 0:
-        #fileavbtxt="kernel.txt"
-        #ftxt=open(fileavbtxt,'tw')
-        #print(offset,file=ftxt)
-        #ftxt.close()
         size = os.stat(file).st_size
-        nwritebyte = size - offset
-        with open(file, 'rb') as f:
+        with open(file, 'rb') as f, open("kernel.gz", 'wb') as favb:
             f.seek(offset)
-            readbyte = f.read(nwritebyte)
-        fileavb = "kernel.gz"
-        with open(fileavb, 'wb') as favb:
-            favb.write(readbyte)
-    else:
-        return
+            favb.write(f.read(size - offset))
+    return None
 
 
 if __name__ == '__main__':
-    if sys.argv.__len__() == 3:
-        main(sys.argv[1], sys.argv[2], os.path.dirname(os.path.abspath(sys.argv[2])))
-    if sys.argv.__len__() == 4:
-        main(sys.argv[1], sys.argv[2], sys.argv[3])
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])
